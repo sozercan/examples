@@ -1,0 +1,18 @@
+FROM sozercan/tensorflow-serving-model-server
+
+ENV MODEL_NAME mnist
+ENV JOB_NAME myjob-123
+ENV BUCKET_NAME kubeflowexample
+ENV PORT 9001
+ENV ENDPOINT http://ip:9000
+ENV KEY_ID key
+ENV KEY_SECRET secret
+
+RUN wget https://dl.minio.io/client/mc/release/linux-amd64/mc \
+    && chmod +x mc \
+    && ./mc config host add minio ${ENDPOINT} ${KEY_ID} ${KEY_SECRET} \
+    && ./mc cp --recursive minio/${BUCKET_NAME}/models/${JOB_NAME}/export /tmp/${MODEL_NAME}
+
+WORKDIR /serving
+
+CMD /serving/bazel-bin/tensorflow_serving/model_servers/tensorflow_model_server --port=${PORT} --model_name=${MODEL_NAME} --model_base_path=/tmp/${MODEL_NAME}/export/${MODEL_NAME}
